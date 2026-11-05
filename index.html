@@ -370,6 +370,8 @@ function regHas(k,x){if(x.g!=="sr")return false;var L=REG[k];if(!L)return false;
 var SRE=["물리","화염","얼음","번개","바람","양자","허수"],SRP=["파멸","수렵","지식","화합","공허","보존","풍요","기억","환락"];
 var GIE=["불","물","풀","바위"],SRO=["물리","화염","양자","허수"];
 var ZZO=["전기","에테르","루멘"],ZZU=null;
+var ICG=null;
+function iconGame(c){var u=S.icons[c];if(!u)return null;if(!ICG){ICG={};var M={0:"gi",1:"gi",2:"sr",3:"sr",4:"sr",5:"zz"};for(var gi in M){(P[gi]?P[gi].l:[]).forEach(function(x){if(x[3])ICG[x[3]]=M[gi]})}}return ICG[u]||null}
 function zzIc(c){if(!ZZU){ZZU=(P[5]?P[5].l:[]).map(function(x){return x[3]})}var u=S.icons[c];return !!u&&ZZU.indexOf(u)>-1}
 function cg(x){return x.g==="sr"?"sr":x.g==="zz"?"zz":(DEF.indexOf(x)>-1?"gi":"mine")}
 function gameOf(k){if(ZZO.indexOf(k)>-1)return "zz";if(k!=="기타"){if(NAT[k]||GIE.indexOf(k)>-1)return "gi";if(SRO.indexOf(k)>-1||SRP.indexOf(k)>-1||REG[k])return "sr"}var g=null;S.cols.forEach(function(c){c=(c||"").trim();if(g||c==="기타")return;if(ZZO.indexOf(c)>-1)g="zz";else if(NAT[c]||GIE.indexOf(c)>-1)g="gi";else if(SRO.indexOf(c)>-1||SRP.indexOf(c)>-1||REG[c])g="sr"});return g}
@@ -410,7 +412,7 @@ function openDD(cell,r,c,el){
   pick={r:r,c:c};ddKey=r+","+c;var dd=$("#dd");
   function inEl(x){if(el==="기타")return x.g==="sr"?regHas("기타",x):NAT["기타"].indexOf(x.name)>-1;if(REG[el])return regHas(el,x);if(NAT[el])return x.g!=="sr"&&NAT[el].indexOf(x.name)>-1;if(SRP.indexOf(el)>-1)return x.path===el;return [].concat(x.el).indexOf(el)>-1}
   function tile(x){return '<button class="ddi" data-dd="'+x.id+'" aria-label="'+esc(x.name)+'"><i style="background-image:url('+x.src+')"></i><span>'+esc(x.name)+'</span></button>'}
-  var gm=zzIc(c)?"zz":gameOf(el),okG=function(x){if(x.g==="zz"||gm==="zz")return x.g==="zz"&&gm==="zz";return !gm||(gm==="sr"?x.g==="sr":gm==="gi"?x.g!=="sr":true)};
+  var gm=iconGame(c)||gameOf(el),okG=function(x){if(x.g==="zz"||gm==="zz")return x.g==="zz"&&gm==="zz";return !gm||(gm==="sr"?x.g==="sr":gm==="gi"?x.g!=="sr":true)};
   var L=DEF.filter(function(x){return okG(x)&&inEl(x)});ddO=DEF.filter(function(x){return !(okG(x)&&inEl(x))}).concat(S.chars);ddOF=gm?{gi:gm==="gi",sr:gm==="sr",zz:gm==="zz"}:{gi:true,sr:true,zz:true};
   $("#ddt").textContent=el+" "+L.length+"명";ddL=L;var q=$("#ddq");q.value="";q.hidden=false;ddRender();
   dd.hidden=false;
