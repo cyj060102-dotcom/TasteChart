@@ -123,6 +123,12 @@ body.placing .cell{cursor:copy}
 .ics .pr button{width:26px;height:26px;font-size:15px}
 .ics .tb{width:auto;height:22px;padding:0 6px;font-size:10px;border-radius:11px;white-space:nowrap}
 .nonick .rh input{display:none}
+.noav .av,.noav .rh .pcs{display:none}
+.noav.nonick{--c0:0px}
+#board.noav.nonick{padding-left:52px;padding-right:60px}
+.noav.nonick .rh .mv{left:-40px;margin-top:-30px}
+.noav.nonick .rh .x{left:-36px;right:auto;top:calc(50% + 4px)}
+.noav .rh input{top:calc(50% - 8px)}
 .av{width:var(--avs,64px);height:var(--avs,64px);background-color:transparent;border-color:var(--bl,var(--line));color:var(--bt,var(--ink))}
 .exp .av.e{color:transparent}
 .ics button{width:30px;height:30px;border-radius:9px;border:1px solid var(--bl,var(--line));background:transparent;color:var(--bt,var(--ink));font-size:16px;line-height:1;padding:0}
@@ -264,7 +270,7 @@ body.ro .bar .btn:not(#save){pointer-events:none;opacity:.5}
   <button class="btn" id="reset">초기화</button>
 </div>
 <div id="selbar" hidden><i id="selimg"></i><span><b id="selname"></b> 선택됨. 표의 칸을 누르면 들어가요.</span><button class="btn" id="selx">선택 해제</button></div>
-<div class="tools"><label class="tb ck"><input type="checkbox" id="imgt"><span>속성 이미지</span></label><label class="tb ck"><input type="checkbox" id="mot"><span>속성 색상 조정</span></label><button class="bgb gr" id="mob" aria-label="속성 색상 조정" title="속성 색상 조정" hidden><i></i></button><label class="tb ck"><input type="checkbox" id="bdt"><span>속성 배경</span></label><button class="bgb sol" id="bdb" aria-label="속성 배경색 고르기" title="속성 배경색" hidden><i></i></button><label class="tb ck"><input type="checkbox" id="txt"><span>속성 글씨</span></label><label class="tb ck"><input type="checkbox" id="nick"><span>닉네임</span></label></div>
+<div class="tools"><label class="tb ck"><input type="checkbox" id="imgt"><span>속성 이미지</span></label><label class="tb ck"><input type="checkbox" id="mot"><span>속성 색상 조정</span></label><button class="bgb gr" id="mob" aria-label="속성 색상 조정" title="속성 색상 조정" hidden><i></i></button><label class="tb ck"><input type="checkbox" id="bdt"><span>속성 배경</span></label><button class="bgb sol" id="bdb" aria-label="속성 배경색 고르기" title="속성 배경색" hidden><i></i></button><label class="tb ck"><input type="checkbox" id="txt"><span>속성 글씨</span></label><label class="tb ck"><input type="checkbox" id="avt"><span>프로필</span></label><label class="tb ck"><input type="checkbox" id="nick"><span>닉네임</span></label></div>
 <div class="wrap"><div id="board"><div class="bgs"><button class="bgb" id="bgb" aria-label="배경색 고르기" title="배경색"><i></i></button></div><input type="color" id="bgc" class="vh" tabindex="-1" aria-hidden="true"><input id="title" aria-label="제목"><div class="grid" id="grid"></div><div id="ptags"></div></div></div>
 <div class="tools uihrow"><label class="tb ck"><input type="checkbox" id="uih"><span>UI 숨기기</span></label></div>
 
@@ -383,7 +389,7 @@ function fit(file,size){return new Promise(function(res){var r=new FileReader();
 function render(){
   $("#title").value=S.title;applyBg();applyBd();
   var g=$("#grid"),n=S.cols.length,h='<div class="ics"><div class="icg"><button data-is="1" aria-label="아이콘 크게">+</button><button data-is="-1" aria-label="아이콘 작게">−</button></div></div>';$("#board").style.setProperty("--ics",(S.noImg?0:(S.icSize||64))+"px");$("#board").style.setProperty("--avs",(S.avSize||64)+"px");
-  g.style.gridTemplateColumns="88px repeat("+n+",64px)";
+  g.style.gridTemplateColumns="var(--c0,88px) repeat("+n+",64px)";
   S.cols.forEach(function(c,i){h+='<div class="ch"><button class="ic'+(S.icons[i]?'':' e')+'" data-ic="'+i+'" aria-label="아이콘 선택"'+(S.icons[i]?' style="background-image:url(\''+monoSrc(S.icons[i])+'\')"':'')+'>'+(S.icons[i]?'':'+')+'</button><textarea rows="2" data-col="'+i+'" aria-label="열 이름">'+esc(c)+'</textarea>'+(n>1?'<button class="x" data-dc="'+i+'" aria-label="열 삭제">×</button>':'')+(i===n-1?'<button class="add" data-addc="1" aria-label="열 추가">+</button>':'')+'</div>'});
   S.rows.forEach(function(r,ri){
     h+='<div class="rh"><button class="mv" data-mv="'+ri+'" aria-label="행 순서 바꾸기"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 4v16M7 9l5-5 5 5M7 15l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>'+(ri===0?'<div class="pcs"><button data-ps="1" aria-label="프로필 크게">+</button><button data-ps="-1" aria-label="프로필 작게">−</button></div>':'')+'<button class="av'+(r.av?'':' e')+'" data-av="'+ri+'" style="'+(r.av?'background-image:url('+r.av+')':'')+'">'+(r.av?'':'사진')+'</button><input data-row="'+ri+'" value="'+esc(r.name)+'" aria-label="이름">'+(S.rows.length>1?'<button class="x" data-dr="'+ri+'" aria-label="행 삭제">×</button>':'')+(ri===S.rows.length-1?'<button class="add addr" data-addr="1" aria-label="행 추가">+</button>':'')+'</div>';
@@ -539,7 +545,7 @@ function cpPaint(){var hex=hsv2hex(cpH,cpS,cpV);$("#cpsv").style.background="lin
 var cpT="bg";
 function cpGet(){return cpT==="mo"?mdef()[cpStop]:cpT==="bd"?(S.bdc||"#333b55"):(S.bg||"#ffffff")}
 function cpSet(v){if(cpT==="mo"){mdef();S.mg[cpStop]=v;applyMo()}else if(cpT==="bd"){S.bdc=v;applyBd()}else{S.bg=v;applyBg()}}
-function applyBd(){var b=$("#board");b.classList.toggle("bd",!!S.bd);b.classList.toggle("notxt",!!S.noTxt);b.classList.toggle("nonick",!!S.noNick);b.style.setProperty("--bdc",S.bdc||"#333b55");$("#bdt").checked=!!S.bd;$("#bdb").hidden=!S.bd||!!S.noImg;$("#bdt").disabled=!!S.noImg;$("#imgt").checked=!S.noImg;$("#bdt").closest("label").classList.toggle("dis",!!S.noImg);b.classList.toggle("noimg",!!S.noImg);$("#bdb i").style.setProperty("--c",S.bdc||"#333b55");$("#txt").checked=!S.noTxt;$("#nick").checked=!S.noNick;applyMo(1)}
+function applyBd(){var b=$("#board");b.classList.toggle("bd",!!S.bd);b.classList.toggle("notxt",!!S.noTxt);b.classList.toggle("nonick",!!S.noNick);b.classList.toggle("noav",!!S.noAv);$("#avt").checked=!S.noAv;b.style.setProperty("--bdc",S.bdc||"#333b55");$("#bdt").checked=!!S.bd;$("#bdb").hidden=!S.bd||!!S.noImg;$("#bdt").disabled=!!S.noImg;$("#imgt").checked=!S.noImg;$("#bdt").closest("label").classList.toggle("dis",!!S.noImg);b.classList.toggle("noimg",!!S.noImg);$("#bdb i").style.setProperty("--c",S.bdc||"#333b55");$("#txt").checked=!S.noTxt;$("#nick").checked=!S.noNick;applyMo(1)}
 function cpSync(){var v=hex2hsv(cpGet());if(v.s>0)cpH=v.h;cpS=v.s;cpV=v.v;cpPaint()}
 function cpApply(){cpSet(hsv2hex(cpH,cpS,cpV));cpPaint()}
 function cpDrag(el,fn){el.addEventListener("pointerdown",function(e){e.preventDefault();el.setPointerCapture(e.pointerId);var mv=function(ev){var r=el.getBoundingClientRect();fn(Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width)),Math.max(0,Math.min(1,(ev.clientY-r.top)/r.height)));cpApply()};mv(e);el.onpointermove=mv;el.onpointerup=el.onpointercancel=function(){el.onpointermove=null;el.onpointerup=null;el.onpointercancel=null;persist()}})}
@@ -558,12 +564,13 @@ $("#cpga").oninput=function(){S.ma=+this.value;applyMo()};
 $("#cpga").onchange=function(){persist()};
 $("#bdt").onchange=function(){S.bd=this.checked;if(!S.bd)cpClose();applyBd();persist()};
 $("#imgt").onchange=function(){S.noImg=!this.checked;persist();render()};
+$("#avt").onchange=function(){S.noAv=!this.checked;applyBd();persist()};
 $("#nick").onchange=function(){S.noNick=!this.checked;applyBd();persist()};
 $("#txt").onchange=function(){S.noTxt=!this.checked;applyBd();persist()};
 document.addEventListener("pointerdown",function(e){if(!$("#cp").hidden&&!e.target.closest("#cp")&&!e.target.closest(".bgb"))cpClose()});
 $("#bgc").addEventListener("input",function(e){S.bg=e.target.value;applyBg()});
 $("#bgc").addEventListener("change",function(e){S.bg=e.target.value;applyBg();persist()});
-function doReset(){closeDD();setSel(null);S.cols=["","","","","","",""];S.rows=[{name:"",av:""},{name:"",av:""}];S.cells={};S.icons={};S.bg="";S.icSize=64;S.noTxt=false;S.avSize=64;S.noNick=false;S.bd=false;S.noImg=false;S.mono=false;S.mg=MD0.slice();S.ma=160;persist();render()}
+function doReset(){closeDD();setSel(null);S.cols=["","","","","","",""];S.rows=[{name:"",av:""},{name:"",av:""}];S.cells={};S.icons={};S.bg="";S.icSize=64;S.noTxt=false;S.avSize=64;S.noNick=false;S.noAv=false;S.bd=false;S.noImg=false;S.mono=false;S.mg=MD0.slice();S.ma=160;persist();render()}
 $("#reset").onclick=function(){closeDD();$("#cm").classList.add("on")};
 $("#cmok").onclick=function(){$("#cm").classList.remove("on");doReset()};
 $("#title").onchange=function(e){S.title=e.target.value;persist()};
