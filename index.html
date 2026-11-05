@@ -46,7 +46,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .it .d{position:absolute;top:-4px;right:-2px;width:18px;height:18px;border-radius:9px;border:0;background:var(--sub);color:var(--card);font-size:11px;padding:0}
 .sheet input[type=search]{flex:1;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:9px;background:transparent;color:var(--ink);font-size:14px}
 .empty{grid-column:1/-1;color:var(--sub);font-size:13px;text-align:center;padding:20px 0}
-#out img{max-width:100%;border-radius:10px}
+#out img{max-width:100%;border-radius:10px;-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
 .ch{display:flex;flex-direction:column;align-items:center;gap:4px}
 .ch textarea{width:100%;display:block;border:0;border-radius:10px;background:var(--pill);color:var(--ink);text-align:center;padding:9px 2px;font-family:inherit;font-weight:600;font-size:12px;line-height:16px;outline:none;resize:none;overflow:hidden;text-wrap:balance}
 .ic{width:32px;height:32px;border-radius:10px;border:0;background:var(--empty) center/72% no-repeat;padding:0;font-size:18px;color:var(--sub);flex:none}
@@ -240,6 +240,8 @@ body.placing .cell{cursor:copy}
 body.ro #board,body.ro .tools,body.ro .libsec{pointer-events:none}
 body.ro .bar .btn:not(#save){pointer-events:none;opacity:.5}
 .sharebar{display:none!important}
+.uihrow{margin:10px 0 0;align-items:center}
+
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -255,6 +257,7 @@ body.ro .bar .btn:not(#save){pointer-events:none;opacity:.5}
 <div id="selbar" hidden><i id="selimg"></i><span><b id="selname"></b> 선택됨. 표의 칸을 누르면 들어가요.</span><button class="btn" id="selx">선택 해제</button></div>
 <div class="tools"><label class="tb ck"><input type="checkbox" id="imgt"><span>속성 이미지</span></label><label class="tb ck"><input type="checkbox" id="mot"><span>속성 색상 조정</span></label><button class="bgb gr" id="mob" aria-label="속성 색상 조정" title="속성 색상 조정" hidden><i></i></button><label class="tb ck"><input type="checkbox" id="bdt"><span>속성 배경</span></label><button class="bgb sol" id="bdb" aria-label="속성 배경색 고르기" title="속성 배경색" hidden><i></i></button><label class="tb ck"><input type="checkbox" id="txt"><span>속성 글씨</span></label><label class="tb ck"><input type="checkbox" id="nick"><span>닉네임</span></label></div>
 <div class="wrap"><div id="board"><div class="bgs"><button class="bgb" id="bgb" aria-label="배경색 고르기" title="배경색"><i></i></button></div><input type="color" id="bgc" class="vh" tabindex="-1" aria-hidden="true"><input id="title" aria-label="제목"><div class="grid" id="grid"></div><div id="ptags"></div></div></div>
+<div class="tools uihrow"><label class="tb ck"><input type="checkbox" id="uih"><span>UI 숨기기</span></label></div>
 
 <section class="sharebar" id="sb">
   <div class="sbrow"><button class="btn p" id="shr">링크 공유하기</button><span id="sbstat" class="sbs"></span></div>
@@ -302,8 +305,9 @@ body.ro .bar .btn:not(#save){pointer-events:none;opacity:.5}
 </div></div>
 
 <div class="modal" id="om"><div class="sheet">
-  <h3>꾹 눌러서 이미지를 저장하세요</h3>
+  <h3>이미지 저장</h3>
   <div id="out" style="overflow:auto"></div>
+  <button class="btn p" id="saveImg">저장하기</button>
   <button class="btn" data-close>닫기</button>
 </div></div>
 
@@ -526,14 +530,27 @@ $("#title").onchange=function(e){S.title=e.target.value;persist()};
 $("#grid").addEventListener("input",function(e){if(e.target.dataset.col!==undefined)chkTwo()});
 $("#grid").addEventListener("change",function(e){var d=e.target.dataset;if(d.col!==undefined)S.cols[+d.col]=e.target.value;if(d.row!==undefined)S.rows[+d.row].name=e.target.value;persist()});
 function expImgs(root){root.querySelectorAll("#board .cell,#board .av,#board .ic").forEach(function(el){var m=/^url\(["']?([\s\S]*?)["']?\)$/.exec(el.style.backgroundImage||"");if(!m)return;var im=root.createElement?root.createElement("img"):document.createElement("img");im.src=m[1];im.alt="";im.setAttribute("data-exp","1");im.style.cssText="position:absolute;left:0;top:0;width:100%;height:100%;border-radius:inherit;display:block;pointer-events:none";var cs=(root.defaultView||window).getComputedStyle(el);if(cs.position==="static")el.style.position="relative";el.style.backgroundImage="none";el.appendChild(im)})}
+function expNick(d){var w=d.defaultView||window;d.querySelectorAll("#board .rh input").forEach(function(inp){var cs=w.getComputedStyle(inp);if(cs.display==="none")return;var x=d.createElement("div");x.textContent=inp.value;x.setAttribute("data-exp","1");x.style.cssText="position:absolute;left:50%;transform:translateX(-50%);top:"+cs.top+";width:"+cs.width+";height:15px;line-height:15px;margin:0;padding:0;text-align:center;white-space:nowrap;overflow:visible;font-family:"+cs.fontFamily+";font-size:"+cs.fontSize+";font-weight:"+cs.fontWeight+";color:"+cs.color+";background:none;border:0";inp.style.visibility="hidden";inp.parentNode.appendChild(x)})}
+$("#uih").onchange=function(){$("#board").classList.toggle("exp",this.checked);try{cpClose()}catch(e){}};
+$("#saveImg").onclick=function(){
+  var bl=window.__expBlob;if(!bl)return;
+  var file=null;try{file=new File([bl],"취향표.png",{type:"image/png"})}catch(e){}
+  function dl(){var a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download="취향표.png";document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a)},500)}
+  if(file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:"취향표"}).catch(function(e){if(e&&e.name!=="AbortError")dl()})}else dl();
+};
 $("#save").onclick=function(){
   var b=$("#board");b.classList.add("exp");
   var tt=$("#title"),tx=document.createElement("div");tx.id="titleX";tx.textContent=tt.value;tt.style.display="none";tt.parentNode.insertBefore(tx,tt);
-  function undoX(){if(tx.parentNode)tx.parentNode.removeChild(tx);tt.style.display="";b.classList.remove("exp")}
-  html2canvas(b,{scale:3,backgroundColor:getComputedStyle(b).backgroundColor,useCORS:true,onclone:function(d){expImgs(d)}}).then(function(c){
+  function undoX(){if(tx.parentNode)tx.parentNode.removeChild(tx);tt.style.display="";if(!$("#uih").checked)b.classList.remove("exp")}
+  html2canvas(b,{scale:3,backgroundColor:getComputedStyle(b).backgroundColor,useCORS:true,onclone:function(d){expImgs(d);expNick(d)}}).then(function(c){
     undoX();
-    $("#out").innerHTML='<img alt="취향표" src="'+c.toDataURL("image/png")+'">';
-    $("#om").classList.add("on");
+    c.toBlob(function(bl){
+      if(!bl){alert("이미지를 만들지 못했어요.");return}
+      window.__expBlob=bl;
+      var u=URL.createObjectURL(bl),o=$("#out");
+      o.innerHTML="";var im=new Image();im.alt="취향표";im.src=u;o.appendChild(im);
+      $("#om").classList.add("on");
+    },"image/png");
   }).catch(function(){undoX();alert("이미지를 만들지 못했어요. 화면 캡처를 이용해 주세요.")});
 };
 function setSel(id){
