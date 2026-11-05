@@ -256,6 +256,16 @@ body.ro #board,body.ro .tools,body.ro .libsec{pointer-events:none}
 body.ro .bar .btn:not(#save){pointer-events:none;opacity:.5}
 .sharebar{display:none!important}
 .uihrow{margin:10px 0 0;align-items:center}
+.slot{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line)}
+.slot .sn{flex:1;min-width:0;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot .sn small{display:block;color:var(--sub);font-weight:400;font-size:11px}
+.slot .btn{padding:6px 10px;font-size:12px}
+#slist{overflow-y:auto;max-height:42vh}
+#slpop{position:absolute;z-index:30;display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.28);padding:7px 8px;font-size:12px;white-space:nowrap}
+#slpop[hidden]{display:none}
+#slpop .btn{padding:5px 9px;font-size:12px}
+#slpop:after{content:"";position:absolute;bottom:-6px;left:var(--ar,20px);width:10px;height:10px;background:var(--card);border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
+.slname{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px;background:transparent;color:var(--ink);font-size:14px}
 
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -267,6 +277,7 @@ body.ro .bar .btn:not(#save){pointer-events:none;opacity:.5}
 <div class="bar">
   <span class="grp"><button class="btn sq" id="undo" aria-label="되돌리기" title="뒤로 (Ctrl+Z)" disabled><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 14L4 9l5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="btn sq" id="redo" aria-label="다시 실행" title="앞으로 (Ctrl+Shift+Z)" disabled><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 14l5-5-5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
   <button class="btn p" id="save">이미지로 저장</button>
+  <button class="btn" id="slotb">저장 슬롯</button>
   <button class="btn" id="reset">초기화</button>
 </div>
 <div id="selbar" hidden><i id="selimg"></i><span><b id="selname"></b> 선택됨. 표의 칸을 누르면 들어가요.</span><button class="btn" id="selx">선택 해제</button></div>
@@ -301,6 +312,14 @@ body.ro .bar .btn:not(#save){pointer-events:none;opacity:.5}
     <button class="btn" id="emb">이미지 편집</button>
     </div>
   <div class="lib" id="lib"></div>
+</div></div>
+
+<div class="modal" id="sm"><div class="sheet">
+  <div class="row" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><h3>저장 슬롯</h3><button class="xc" data-close aria-label="닫기"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></button></div>
+  <div class="row" style="flex-wrap:nowrap"><input type="text" id="slname" class="slname" placeholder="슬롯 이름" maxlength="30"><button class="btn p" id="slsave">현재 상태 저장</button></div>
+  <div id="slist"></div>
+  <p style="margin:0;font-size:12px;color:var(--sub)">슬롯은 이 브라우저에만 저장돼요.</p>
+  <div id="slpop" hidden><span id="slpt"></span><button class="btn p" id="slpy">확인</button><button class="btn" id="slpn">취소</button></div>
 </div></div>
 
 <div class="modal" id="cm"><div class="sheet">
@@ -571,6 +590,24 @@ document.addEventListener("pointerdown",function(e){if(!$("#cp").hidden&&!e.targ
 $("#bgc").addEventListener("input",function(e){S.bg=e.target.value;applyBg()});
 $("#bgc").addEventListener("change",function(e){S.bg=e.target.value;applyBg();persist()});
 function doReset(){closeDD();setSel(null);S.cols=["","","","","","",""];S.rows=[{name:"",av:""},{name:"",av:""}];S.cells={};S.icons={};S.bg="";S.icSize=64;S.noTxt=false;S.avSize=64;S.noNick=false;S.noAv=false;S.bd=false;S.noImg=false;S.mono=false;S.mg=MD0.slice();S.ma=160;persist();render()}
+var SLK="chart-slots";
+function slGet(){try{var a=JSON.parse(localStorage.getItem(SLK)||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}}
+function slPut(a){try{localStorage.setItem(SLK,JSON.stringify(a));return true}catch(e){alert("저장 공간이 부족해요. 파일로 내보내기를 이용해 주세요.");return false}}
+function slFmt(t){var d=new Date(t),p=function(n){return(n<10?"0":"")+n};return d.getFullYear()+"."+p(d.getMonth()+1)+"."+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes())}
+function slRender(){var a=slGet();$("#slist").innerHTML=a.length?a.map(function(x,i){return '<div class="slot"><div class="sn">'+esc(x.name)+'<small>'+slFmt(x.t)+'</small></div><button class="btn" data-sl="load" data-i="'+i+'">불러오기</button><button class="btn" data-sl="over" data-i="'+i+'">덮어쓰기</button><button class="btn" data-sl="del" data-i="'+i+'" aria-label="삭제">×</button></div>'}).join(""):'<div class="empty">저장된 슬롯이 없어요.</div>'}
+function loadState(o){if(!o||!Array.isArray(o.rows)||!Array.isArray(o.cols))return false;var d=def();S=Object.assign(d,o);S.icons=S.icons||{};S.chars=S.chars||[];S.icLib=S.icLib||[];S.cells=S.cells||{};persist();closeDD();setSel(null);render();libMain();icRender();return true}
+$("#slotb").onclick=function(){closeDD();slPopClose();$("#slname").value="";slRender();$("#sm").classList.add("on")};
+$("#slsave").onclick=function(){var a=slGet(),n=($("#slname").value||"").trim()||("슬롯 "+(a.length+1));a.unshift({name:n,t:Date.now(),S:JSON.parse(JSON.stringify(S))});if(slPut(a)){$("#slname").value="";slRender()}};
+var slPend=null;
+function slPopClose(){slPend=null;$("#slpop").hidden=true}
+$("#slist").addEventListener("click",function(e){var b=e.target.closest("[data-sl]");if(!b)return;var a=slGet(),i=+b.dataset.i,x=a[i];if(!x)return;var k=b.dataset.sl;
+  if(k==="load"){slPopClose();if(loadState(JSON.parse(JSON.stringify(x.S))))$("#sm").classList.remove("on");return}
+  slPend={k:k,i:i};var pop=$("#slpop");$("#slpt").textContent=k==="over"?"덮어쓸까요?":"삭제할까요?";pop.hidden=false;
+  var sh=pop.parentNode.getBoundingClientRect(),br=b.getBoundingClientRect(),pw=pop.offsetWidth,ph=pop.offsetHeight;
+  var left=Math.max(8,Math.min(br.right-sh.left-pw,sh.width-pw-8));pop.style.left=left+"px";pop.style.top=(br.top-sh.top-ph-10)+"px";pop.style.setProperty("--ar",Math.max(8,Math.min(pw-18,br.left-sh.left+br.width/2-left-5))+"px")});
+$("#slpn").onclick=slPopClose;
+$("#slpy").onclick=function(){var p=slPend;slPopClose();if(!p)return;var a=slGet(),x=a[p.i];if(!x)return;if(p.k==="over"){x.S=JSON.parse(JSON.stringify(S));x.t=Date.now();if(slPut(a))slRender()}else if(p.k==="del"){a.splice(p.i,1);if(slPut(a))slRender()}};
+$("#sm").addEventListener("pointerdown",function(e){if(!$("#slpop").hidden&&!e.target.closest("#slpop")&&!e.target.closest("[data-sl]"))slPopClose()});
 $("#reset").onclick=function(){closeDD();$("#cm").classList.add("on")};
 $("#cmok").onclick=function(){$("#cm").classList.remove("on");doReset()};
 $("#title").onchange=function(e){S.title=e.target.value;persist()};
