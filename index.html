@@ -454,7 +454,7 @@ function ddQ(x){var q=($("#ddq").value||"").trim().toLowerCase();return !q||x.na
 function ddRender(){$("#ddl").innerHTML='<div class="ddg"><button class="ddi t" id="ddadd" aria-label="사진 추가"><i>+</i><span>사진 추가</span></button><button class="ddi t" id="ddx" aria-label="칸 비우기"><i>×</i><span>칸 비우기</span></button>'+ddL.filter(ddQ).map(ddTile).join("")+'</div><div class="dds">다른 캐릭터</div><div class="lfb" id="ddf"></div><div class="ddg" id="ddo"></div>';ddOR()}
 function ddOR(){var n={gi:0,sr:0,zz:0};ddO.forEach(function(x){var g=cg(x);if(n[g]!==undefined)n[g]++});
   $("#ddf").innerHTML=[["gi","원신"],["sr","스타레일"],["zz","젠존제"]].map(function(p){return '<button class="lf'+(ddOF[p[0]]?'':' off')+'" data-ddf="'+p[0]+'" aria-pressed="'+ddOF[p[0]]+'">'+p[1]+' <small>'+n[p[0]]+'</small></button>'}).join("");
-  var V=ddO.filter(function(x){var g=cg(x);return ddQ(x)&&(g==="mine"||ddOF[g])});
+  var V=ddO.filter(function(x){var g=cg(x);return ddQ(x)&&(g==="mine"||ddOF[g])});V=V.filter(function(x){return cg(x)==="mine"}).concat(V.filter(function(x){return cg(x)!=="mine"}));
   $("#ddo").innerHTML=V.map(function(x){return '<button class="ddi" data-dd="'+x.id+'" aria-label="'+esc(x.name)+'"><i style="background-image:url('+x.src+')"></i><span>'+esc(x.name)+'</span></button>'}).join("")||'<div class="empty" style="grid-column:1/-1">표시할 캐릭터가 없어요.</div>'}
 function openDD(cell,r,c,el){
   pick={r:r,c:c};ddKey=r+","+c;var dd=$("#dd");dd.classList.remove("avm","avup","avdn");
@@ -621,27 +621,31 @@ function slGet(){var a=[];try{a=JSON.parse(localStorage.getItem(SLK)||"[]");if(!
 function slPut(a){try{localStorage.setItem(SLK,JSON.stringify(a));return true}catch(e){alert("저장 공간이 부족해요. 필요 없는 슬롯을 지워 주세요.");return false}}
 function slAct(){try{return localStorage.getItem(SLA)||""}catch(e){return""}}
 function slSetAct(id){try{if(id)localStorage.setItem(SLA,id);else localStorage.removeItem(SLA)}catch(e){}}
-function slNew(name,st){return{id:"s"+Date.now()+Math.random().toString(36).slice(2,6),name:name,t:Date.now(),S:JSON.parse(JSON.stringify(st))}}
+function snap(st){var o=JSON.parse(JSON.stringify(st));delete o.chars;delete o.icLib;return o}
+function slNew(name,st){return{id:"s"+Date.now()+Math.random().toString(36).slice(2,6),name:name,t:Date.now(),S:snap(st)}}
 function canon(o){if(Array.isArray(o))return o.map(canon);if(o&&typeof o==="object"){var r={};Object.keys(o).sort().forEach(function(k){if(o[k]!==undefined)r[k]=canon(o[k])});return r}return o}
-function sameS(a,b){return JSON.stringify(canon(a))===JSON.stringify(canon(b))}
+function sameS(a,b){return JSON.stringify(canon(snap(a)))===JSON.stringify(canon(snap(b)))}
 function isBlank(){return !Object.keys(S.cells||{}).length&&!Object.keys(S.icons||{}).length&&S.cols.every(function(c){return!c})&&S.rows.every(function(r){return!r.name&&!r.av})}
 function slFmt(t){var d=new Date(t),p=function(n){return(n<10?"0":"")+n};return d.getFullYear()+"."+p(d.getMonth()+1)+"."+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes())}
 function slRender(){var a=slGet(),ac=slAct();$("#slist").innerHTML=a.length?a.map(function(x,i){return '<div class="slot'+(x.id===ac?' cur':'')+'"><div class="sn"><span class="slt" data-rn="'+i+'" title="이름 바꾸기">'+esc(x.name)+'</span>'+(x.id===ac?'<em>현재</em>':'')+'<small>'+slFmt(x.t)+'</small></div><button class="btn" data-sl="load" data-i="'+i+'">불러오기</button><button class="btn" data-sl="over" data-i="'+i+'">덮어쓰기</button><button class="btn" data-sl="del" data-i="'+i+'" aria-label="삭제"'+(a.length<2?' disabled title="마지막 슬롯은 삭제할 수 없어요"':'')+'>×</button></div>'}).join(""):'<div class="empty">저장된 슬롯이 없어요.</div>'}
-function loadState(o){if(!o||!Array.isArray(o.rows)||!Array.isArray(o.cols))return false;var d=def();S=Object.assign(d,o);S.icons=S.icons||{};S.chars=S.chars||[];S.icLib=S.icLib||[];S.cells=S.cells||{};persist();closeDD();setSel(null);render();libMain();icRender();return true}
+function loadState(o){if(!o||!Array.isArray(o.rows)||!Array.isArray(o.cols))return false;var kc=(S&&S.chars)||[],ki=(S&&S.icLib)||[],d=def();S=Object.assign(d,o);S.icons=S.icons||{};S.cells=S.cells||{};S.chars=mergeC(kc,o.chars);S.icLib=mergeI(ki,o.icLib);persist();closeDD();setSel(null);render();libMain();libRender();icRender();return true}
+function mergeC(a,b){var r=(a||[]).slice(),ids={};r.forEach(function(c){ids[c.id]=1});(b||[]).forEach(function(c){if(c&&!ids[c.id]){ids[c.id]=1;r.push(c)}});return r}
+function mergeI(a,b){var r=(a||[]).slice();(b||[]).forEach(function(u){if(u&&r.indexOf(u)<0)r.push(u)});return r}
 var gmNext=null;
-function guard(next){var a=slGet(),ac=slAct(),cur=a.filter(function(x){return x.id===ac})[0];
+var gmNew=false;
+function guard(next,asNew){gmNew=!!asNew;var a=slGet(),ac=slAct(),cur=a.filter(function(x){return x.id===ac})[0];
   var dirty=cur?!sameS(S,cur.S):!isBlank();
   if(!dirty){next();return}
-  gmNext=next;$("#gmt").textContent=cur?"현재 상태를 '"+cur.name+"' 슬롯에 저장하시겠습니까?":"현재 상태를 슬롯에 저장하시겠습니까?";$("#gm").classList.add("on")}
+  gmNext=next;$("#gmt").textContent=asNew?"현재 상태를 새 슬롯에 저장하시겠습니까?":cur?"현재 상태를 '"+cur.name+"' 슬롯에 저장하시겠습니까?":"현재 상태를 슬롯에 저장하시겠습니까?";$("#gm").classList.add("on")}
 function guardSave(){var a=slGet(),ac=slAct(),cur=a.filter(function(x){return x.id===ac})[0];
-  if(cur){cur.S=JSON.parse(JSON.stringify(S));cur.t=Date.now()}else{var n=slNew("슬롯 "+(a.length+1),S);a.unshift(n);slSetAct(n.id)}
+  if(cur&&!gmNew){cur.S=snap(S);cur.t=Date.now()}else{var n=slNew("슬롯 "+(a.length+1),S);a.unshift(n);if(!gmNew)slSetAct(n.id)}
   return slPut(a)}
 $("#gmy").onclick=function(){if(!guardSave())return;$("#gm").classList.remove("on");var n=gmNext;gmNext=null;if(n)n()};
 $("#gmn").onclick=function(){$("#gm").classList.remove("on");var n=gmNext;gmNext=null;if(n)n()};
 $("#gmc").onclick=function(){$("#gm").classList.remove("on");gmNext=null};
 $("#slotb").onclick=function(){closeDD();slPopClose();$("#slname").value="";slRender();$("#sm").classList.add("on")};
 $("#slsave").onclick=function(){var a=slGet(),ac=slAct(),cur=a.filter(function(x){return x.id===ac})[0],n=($("#slname").value||"").trim();
-  if(cur){cur.S=JSON.parse(JSON.stringify(S));cur.t=Date.now();if(n)cur.name=n}else{cur=slNew(n||("슬롯 "+(a.length+1)),S);a.unshift(cur)}
+  if(cur){cur.S=snap(S);cur.t=Date.now();if(n)cur.name=n}else{cur=slNew(n||("슬롯 "+(a.length+1)),S);a.unshift(cur)}
   if(slPut(a)){slSetAct(cur.id);$("#slname").value="";slRender();var bt=$("#slsave");bt.textContent="저장됨 ✓";clearTimeout(bt._t);bt._t=setTimeout(function(){bt.textContent="현재 상태 저장"},1200)}};
 $("#slnew").onclick=function(){guard(function(){var a=slGet(),n=($("#slname").value||"").trim()||("슬롯 "+(a.length+1));doReset();var x=slNew(n,S);a.unshift(x);if(slPut(a)){slSetAct(x.id);$("#slname").value="";$("#sm").classList.remove("on")}})};
 var slPend=null;
@@ -651,13 +655,13 @@ $("#slist").addEventListener("click",function(e){
     var done=false;function fin(ok){if(done)return;done=true;if(ok){var v=inp.value.trim();if(v){var a1=slGet();if(a1[i0]){a1[i0].name=v;slPut(a1)}}}slRender()}
     inp.addEventListener("keydown",function(ev){if(ev.key==="Enter"){ev.preventDefault();fin(true)}else if(ev.key==="Escape"){ev.stopPropagation();fin(false)}});inp.addEventListener("blur",function(){fin(true)});return}
   var b=e.target.closest("[data-sl]");if(!b)return;var a=slGet(),i=+b.dataset.i,x=a[i];if(!x)return;var k=b.dataset.sl;
-  if(k==="load"){slPopClose();guard(function(){if(loadState(JSON.parse(JSON.stringify(x.S)))){slSetAct(x.id);$("#sm").classList.remove("on")}});return}
+  if(k==="load"){slPopClose();guard(function(){if(loadState(JSON.parse(JSON.stringify(x.S)))){slSetAct(x.id);$("#sm").classList.remove("on")}},x.id===slAct());return}
   slPend={k:k,i:i};var pop=$("#slpop");$("#slpt").textContent=k==="over"?"덮어쓸까요?":"삭제할까요?";pop.hidden=false;
   var sh=pop.parentNode.getBoundingClientRect(),br=b.getBoundingClientRect(),pw=pop.offsetWidth,ph=pop.offsetHeight;
   var left=Math.max(8,Math.min(br.right-sh.left-pw,sh.width-pw-8));pop.style.left=left+"px";pop.style.top=(br.top-sh.top-ph-10)+"px";pop.style.setProperty("--ar",Math.max(8,Math.min(pw-18,br.left-sh.left+br.width/2-left-5))+"px")});
 $("#slpn").onclick=slPopClose;
-$("#slpy").onclick=function(){var p=slPend;slPopClose();if(!p)return;var a=slGet(),x=a[p.i];if(!x)return;if(p.k==="over"){x.S=JSON.parse(JSON.stringify(S));x.t=Date.now();if(slPut(a)){slSetAct(x.id);slRender()}}else if(p.k==="del"){if(a.length<2)return;var wasAct=x.id===slAct();a.splice(p.i,1);if(slPut(a)){if(wasAct){var nx=a[Math.min(p.i,a.length-1)];slSetAct(nx.id);loadState(JSON.parse(JSON.stringify(nx.S)))}slRender()}}};
-setTimeout(function(){if(typeof roomCode!=="undefined"&&roomCode)return;var a=slGet(),ac=slAct();if(a.some(function(x){return x.id===ac}))return;var n=slNew("슬롯 "+(a.length+1),S);a.unshift(n);if(slPut(a))slSetAct(n.id)},0);
+$("#slpy").onclick=function(){var p=slPend;slPopClose();if(!p)return;var a=slGet(),x=a[p.i];if(!x)return;if(p.k==="over"){x.S=snap(S);x.t=Date.now();if(slPut(a)){slSetAct(x.id);slRender()}}else if(p.k==="del"){if(a.length<2)return;var wasAct=x.id===slAct();a.splice(p.i,1);if(slPut(a)){if(wasAct){var nx=a[Math.min(p.i,a.length-1)];slSetAct(nx.id);loadState(JSON.parse(JSON.stringify(nx.S)))}slRender()}}};
+setTimeout(function(){if(typeof roomCode!=="undefined"&&roomCode)return;var a=slGet(),ac=slAct();var mg=false;a.forEach(function(x){if(x.S&&(x.S.chars||x.S.icLib)){S.chars=mergeC(S.chars,x.S.chars);S.icLib=mergeI(S.icLib,x.S.icLib);delete x.S.chars;delete x.S.icLib;mg=true}});if(mg){slPut(a);persist();libMain();libRender();icRender()}if(a.some(function(x){return x.id===ac}))return;var n=slNew("슬롯 "+(a.length+1),S);a.unshift(n);if(slPut(a))slSetAct(n.id)},0);
 $("#sm").addEventListener("pointerdown",function(e){if(!$("#slpop").hidden&&!e.target.closest("#slpop")&&!e.target.closest("[data-sl]"))slPopClose()});
 
 $("#reset").onclick=function(){closeDD();guard(function(){$("#cm").classList.add("on")})};
