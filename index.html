@@ -525,11 +525,12 @@ $("#cmok").onclick=function(){$("#cm").classList.remove("on");doReset()};
 $("#title").onchange=function(e){S.title=e.target.value;persist()};
 $("#grid").addEventListener("input",function(e){if(e.target.dataset.col!==undefined)chkTwo()});
 $("#grid").addEventListener("change",function(e){var d=e.target.dataset;if(d.col!==undefined)S.cols[+d.col]=e.target.value;if(d.row!==undefined)S.rows[+d.row].name=e.target.value;persist()});
+function expImgs(root){root.querySelectorAll("#board .cell,#board .av,#board .ic").forEach(function(el){var m=/^url\(["']?([\s\S]*?)["']?\)$/.exec(el.style.backgroundImage||"");if(!m)return;var im=root.createElement?root.createElement("img"):document.createElement("img");im.src=m[1];im.alt="";im.setAttribute("data-exp","1");im.style.cssText="position:absolute;left:0;top:0;width:100%;height:100%;border-radius:inherit;display:block;pointer-events:none";var cs=(root.defaultView||window).getComputedStyle(el);if(cs.position==="static")el.style.position="relative";el.style.backgroundImage="none";el.appendChild(im)})}
 $("#save").onclick=function(){
   var b=$("#board");b.classList.add("exp");
   var tt=$("#title"),tx=document.createElement("div");tx.id="titleX";tx.textContent=tt.value;tt.style.display="none";tt.parentNode.insertBefore(tx,tt);
   function undoX(){if(tx.parentNode)tx.parentNode.removeChild(tx);tt.style.display="";b.classList.remove("exp")}
-  html2canvas(b,{scale:3,backgroundColor:getComputedStyle(b).backgroundColor,useCORS:true}).then(function(c){
+  html2canvas(b,{scale:3,backgroundColor:getComputedStyle(b).backgroundColor,useCORS:true,onclone:function(d){expImgs(d)}}).then(function(c){
     undoX();
     $("#out").innerHTML='<img alt="취향표" src="'+c.toDataURL("image/png")+'">';
     $("#om").classList.add("on");
